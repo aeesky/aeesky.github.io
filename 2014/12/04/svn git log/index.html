@@ -1,0 +1,455 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>svn git log | More and More</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="Skyline">
+    
+    <meta name="description" content="背景
+电脑中收藏的开源项目太多，svn、git托管的都用，在系统目录中保存，近期电脑硬盘不够用，打算将这些项目的源代码删除，只保留开源地址记录。
+思路依次遍历目录下的子目录，判断其是否是用版本管理软件管理的代码文件夹，如果是则将该项目名称及开源URL保存到日志文件中。
+获取git项目的URL通过查看">
+    
+    
+    
+    
+    <link rel="alternative" href="/atom.xml" title="More and More" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+  <body>
+    <header>
+      <div>
+		
+			<div id="imglogo">
+				<a href="/"><img src="/img/logo.png" alt="More and More" title="More and More"/></a>
+			</div>
+			
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="More and More">More and More</a></h1>
+				<h2 class="blog-motto">keep changing</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">Home</a></li>
+					
+						<li><a href="/archives">Archives</a></li>
+					
+						<li><a href="/about">About</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="hidden" name="q" value="site:aeesky.github.io">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2014/12/04/svn git log/" title="svn git log" itemprop="url">svn git log</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="http://aeesky.github.io/about" title="Skyline" target="_blank" itemprop="author">Skyline</a>
+		
+  <p class="article-time">
+    <time datetime="2014-12-04T06:26:41.000Z" itemprop="datePublished"> 发表于 Dec 4 2014</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">文章目录</strong>
+		
+			<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#思路"><span class="toc-number">2.</span> <span class="toc-text">思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#获取git项目的URL"><span class="toc-number">2.1.</span> <span class="toc-text">获取git项目的URL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#获取svn项目的URL"><span class="toc-number">2.2.</span> <span class="toc-text">获取svn项目的URL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#开始编码"><span class="toc-number">2.3.</span> <span class="toc-text">开始编码</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#小技巧"><span class="toc-number">2.3.1.</span> <span class="toc-text">小技巧</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#循环遍历文件夹"><span class="toc-number">2.4.</span> <span class="toc-text">循环遍历文件夹</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#写入日志"><span class="toc-number">2.5.</span> <span class="toc-text">写入日志</span></a></li></ol></li></ol>
+		
+		</div>
+		
+		<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><hr>
+<p>电脑中收藏的开源项目太多，svn、git托管的都用，在系统目录中保存，近期电脑硬盘不够用，打算将这些项目的源代码删除，只保留开源地址记录。</p>
+<h1 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h1><p>依次遍历目录下的子目录，判断其是否是用版本管理软件管理的代码文件夹，如果是则将该项目名称及开源URL保存到日志文件中。</p>
+<h2 id="获取git项目的URL"><a href="#获取git项目的URL" class="headerlink" title="获取git项目的URL"></a>获取git项目的URL</h2><p>通过查看git help文档可知，在仓库目录下执行‘git remote -v’可以获取当前仓库的远程地址。</p>
+<h2 id="获取svn项目的URL"><a href="#获取svn项目的URL" class="headerlink" title="获取svn项目的URL"></a>获取svn项目的URL</h2><p>svn的服务器URL可以通过‘svn info’查看</p>
+<h2 id="开始编码"><a href="#开始编码" class="headerlink" title="开始编码"></a>开始编码</h2><p><em>近期在学习python，故打算用python实现</em><br>python中的subprocess可以很方便的调用系统命令，输出内容也可以直接处理，参考代码如下：<br><figure class="highlight plain"><figcaption><span>[获取git remote地址 ]</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">def giturl(dir):</div><div class="line">	os.chdir(dir)</div><div class="line">	cmd = &quot;git remote -v&quot;</div><div class="line">	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)</div><div class="line">	url = p.stdout.readlines()[0].split(&apos; &apos;)[0]</div><div class="line">	return str(url).rstrip()</div></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><figcaption><span>[获取svn remote地址 ]</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">def svnurl(dir):</div><div class="line">	os.chdir(dir)</div><div class="line">	cmd = &apos;svn info | find &quot;http&quot;&apos;</div><div class="line">	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)</div><div class="line">	url = p.stdout.readlines()[0].replace(&apos;URL:&apos;,&apos;&apos;)</div><div class="line">	return str(url).rstrip()</div></pre></td></tr></table></figure>
+<h3 id="小技巧"><a href="#小技巧" class="headerlink" title="小技巧"></a>小技巧</h3><p><strong>svn及git仓库目录下都有一个隐藏文件夹，分别是“.svn”、”.git”,通过判断是否含有该目录可以快速的区分是否是代码仓库。</strong></p>
+<h2 id="循环遍历文件夹"><a href="#循环遍历文件夹" class="headerlink" title="循环遍历文件夹"></a>循环遍历文件夹</h2><figure class="highlight plain"><figcaption><span>[用python就是这么简单。]</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">os.listdir(dir);</div></pre></td></tr></table></figure>
+<h2 id="写入日志"><a href="#写入日志" class="headerlink" title="写入日志"></a>写入日志</h2><p>因为打算将目录下所有的仓库地址保存到一个文件，所以要用追加的方式写入日志文件。<br><figure class="highlight plain"><figcaption><span>[格式化字符串]</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">def writeitem(dir):</div><div class="line">	item =svngit(dir)</div><div class="line">	if item and item.find(&apos;http&apos;)&gt;0:</div><div class="line">		item = &apos;%-40s %2s&apos; %(dir, item) </div><div class="line">		print item</div><div class="line">		log = open(&apos;../svn-git.log&apos;, &apos;a+&apos;)</div><div class="line">		log.write(item+&apos;\r&apos;)</div><div class="line">		log.close()</div><div class="line">		pass</div></pre></td></tr></table></figure></p>
+<p><em>这里每遍历一个文件夹写入一条记录，也可以在遍历所有文件夹完成后再把结果一次写入，这样效率可能更快，我偷懒了。：)</em></p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/svn/">svn</a><a href="/tags/git/">git</a><a href="/tags/python/">python</a>
+  </div>
+
+</div>
+
+
+<div class="article-share" id="share">
+
+<div class="share-jiathis">
+  
+<div class="jiathis_style_24x24">
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_googleplus"></a>
+	<a class="jiathis_button_douban"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+    var jiathis_config={
+    data_track_clickback:true,
+    sm:"copy,renren,cqq",
+    pic:"",
+    summary:"",
+     ralateuid:{"tsina":"1319243713"},hideMore:false}
+    
+  </script> 
+<script type="text/javascript" src="//v3.jiathis.com/code/jia.js?uid=
+1410396293460809" charset="utf-8"></script>      
+
+ </div>
+
+</div>
+</footer>   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2014/12/22/xpath in python/" title="xpath in python">
+  <strong>上一篇：</strong><br/>
+  <span>
+  xpath in python</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2014/11/26/gitlab ssh问题排查/"  title="docker安装gitlab">
+ <strong>下一篇：</strong><br/> 
+ <span>docker安装gitlab
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+<section id="comments" class="comment">
+	<div class="ds-thread"></div>
+</section>
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#背景"><span class="toc-number">1.</span> <span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#思路"><span class="toc-number">2.</span> <span class="toc-text">思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#获取git项目的URL"><span class="toc-number">2.1.</span> <span class="toc-text">获取git项目的URL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#获取svn项目的URL"><span class="toc-number">2.2.</span> <span class="toc-text">获取svn项目的URL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#开始编码"><span class="toc-number">2.3.</span> <span class="toc-text">开始编码</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#小技巧"><span class="toc-number">2.3.1.</span> <span class="toc-text">小技巧</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#循环遍历文件夹"><span class="toc-number">2.4.</span> <span class="toc-text">循环遍历文件夹</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#写入日志"><span class="toc-number">2.5.</span> <span class="toc-text">写入日志</span></a></li></ol></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+<div class="categorieslist">
+	<p class="asidetitle">分类</p>
+		<ul>
+		
+			<li><a href="/categories/docker/" title="docker">docker<sup>3</sup></a></li>
+		
+			<li><a href="/categories/docker/gitlab/" title="gitlab">gitlab<sup>2</sup></a></li>
+		
+			<li><a href="/categories/hexo/" title="hexo">hexo<sup>1</sup></a></li>
+		
+		</ul>
+</div>
+
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			<li><a href="/tags/docker/" title="docker">docker<sup>3</sup></a></li>
+		
+			<li><a href="/tags/gitlab/" title="gitlab">gitlab<sup>3</sup></a></li>
+		
+			<li><a href="/tags/python/" title="python">python<sup>2</sup></a></li>
+		
+			<li><a href="/tags/ssh/" title="ssh">ssh<sup>1</sup></a></li>
+		
+			<li><a href="/tags/hexo/" title="hexo">hexo<sup>1</sup></a></li>
+		
+			<li><a href="/tags/svn/" title="svn">svn<sup>1</sup></a></li>
+		
+			<li><a href="/tags/git/" title="git">git<sup>1</sup></a></li>
+		
+		</ul>
+</div>
+
+
+  <div class="linkslist">
+  <p class="asidetitle">友情链接</p>
+    <ul>
+        
+          <li>
+            <a href="http://wuchong.me" target="_blank" title="Jark&#39;s Blog">Jark&#39;s Blog</a>
+          </li>
+        
+          <li>
+            <a href="http://hexo.io" target="_blank" title="Hexo">Hexo</a>
+          </li>
+        
+          <li>
+            <a href="http://www.cnblogs.com" target="_blank" title="cnblogs">cnblogs</a>
+          </li>
+        
+          <li>
+            <a href="https://github.com" target="_blank" title="github">github</a>
+          </li>
+        
+    </ul>
+</div>
+
+  <div class="rsspart">
+	<a href="/atom.xml" target="_blank" title="rss">RSS 订阅</a>
+</div>
+
+  <div class="weiboshow">
+  <p class="asidetitle">新浪微博</p>
+    <iframe width="100%" height="519" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=519&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=0&isFans=0&uid=1319243713&verifier=6aac0f18&dpc=1"></iframe>
+</div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,welcome to my blog, I&#39;m sky. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/1319243713" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/aeesky" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	</div>
+		<p class="copyright">Powered by <a href="http://zespia.tw/hexo/" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Pacman">Jacman</a> © 2017 
+		
+		<a href="http://aeesky.github.io/about" target="_blank" title="Skyline">Skyline</a>
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else
+    {
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      h  = $('article h2')
+      ah = $('article h2'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  if(ah.length==0){
+    t.css('display','none');
+  }else{
+    c.click(function(){
+      ta.css('display', 'block').addClass('fadeIn');
+    });
+    o.click(function(){
+      ta.css('display', 'none');
+    });
+    $(window).scroll(function(){
+      ta.css("top",Math.max(140,320-$(this).scrollTop()));
+    });
+  };
+});
+</script>
+
+
+
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"aeesky"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+
+<!-- MathJax End -->
+
+  </body>
+</html>

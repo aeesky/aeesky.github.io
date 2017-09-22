@@ -1,0 +1,470 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>docker安装gitlab | More and More</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="Skyline">
+    
+    <meta name="description" content="docker网络配置为了实现容器到容器和容器到宿主机之间的通信，Docker本身就已经提供了几种解决方案。当Docker进程启动之后，它会配置一个虚拟的网桥叫docker0在宿主机上，实际上是 Linux 的一个 bridge。这个接口允许Docker去分配虚拟的子网给即将启动的容器们。这个网桥在容">
+    
+    
+    
+    
+    <link rel="alternative" href="/atom.xml" title="More and More" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+  <body>
+    <header>
+      <div>
+		
+			<div id="imglogo">
+				<a href="/"><img src="/img/logo.png" alt="More and More" title="More and More"/></a>
+			</div>
+			
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="More and More">More and More</a></h1>
+				<h2 class="blog-motto">keep changing</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">Home</a></li>
+					
+						<li><a href="/archives">Archives</a></li>
+					
+						<li><a href="/about">About</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="hidden" name="q" value="site:aeesky.github.io">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2014/11/26/gitlab网络配置/" title="docker安装gitlab" itemprop="url">docker安装gitlab</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="http://aeesky.github.io/about" title="Skyline" target="_blank" itemprop="author">Skyline</a>
+		
+  <p class="article-time">
+    <time datetime="2014-11-26T01:15:51.000Z" itemprop="datePublished"> 发表于 Nov 26 2014</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">文章目录</strong>
+		
+			<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#docker网络配置"><span class="toc-number">1.</span> <span class="toc-text">docker网络配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#自定义网桥"><span class="toc-number">1.1.</span> <span class="toc-text">自定义网桥</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#路由配置"><span class="toc-number">1.2.</span> <span class="toc-text">路由配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考链接"><span class="toc-number">1.3.</span> <span class="toc-text">参考链接</span></a></li></ol></li></ol>
+		
+		</div>
+		
+		<h1 id="docker网络配置"><a href="#docker网络配置" class="headerlink" title="docker网络配置"></a>docker网络配置</h1><p>为了实现容器到容器和容器到宿主机之间的通信，Docker本身就已经提供了几种解决方案。当Docker进程启动之后，它会配置一个虚拟的网桥叫docker0在宿主机上，实际上是 Linux 的一个 bridge。这个接口允许Docker去分配虚拟的子网给即将启动的容器们。这个网桥在容器内的网络和宿主机网络之间将作为接口的主节点。<br>Docker容器启动后，随机分配一个本地未占用的私有网段（在 RFC1918 中定义）中的一个地址给 docker0 接口。比如典型的 172.17.42.1，掩码为 255.255.0.0。<br>docker启动后的网络情况通过 <code>ip addr</code>查看。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN qlen 1</div><div class="line">    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</div><div class="line">    inet 127.0.0.1/8 scope host lo</div><div class="line">       valid_lft forever preferred_lft forever</div><div class="line">    inet6 ::1/128 scope host </div><div class="line">       valid_lft forever preferred_lft forever</div><div class="line">2: ens160: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP qlen 1000</div><div class="line">    link/ether 00:50:56:82:b1:f1 brd ff:ff:ff:ff:ff:ff</div><div class="line">    inet 10.215.136.231/23 brd 10.215.137.255 scope global ens160</div><div class="line">       valid_lft forever preferred_lft forever</div><div class="line">    inet6 fe80::250:56ff:fe82:b1f1/64 scope link </div><div class="line">       valid_lft forever preferred_lft forever</div><div class="line">3: virbr0: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu 1500 qdisc noqueue state DOWN qlen 1000</div><div class="line">    link/ether 52:54:00:c1:41:a1 brd ff:ff:ff:ff:ff:ff</div><div class="line">    inet 192.168.122.1/24 brd 192.168.122.255 scope global virbr0</div><div class="line">       valid_lft forever preferred_lft forever</div><div class="line">4: virbr0-nic: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc pfifo_fast master virbr0 state DOWN qlen 1000</div><div class="line">    link/ether 52:54:00:c1:41:a1 brd ff:ff:ff:ff:ff:ff</div><div class="line">16: br-guest: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP qlen 1000</div><div class="line">    link/ether 36:eb:f8:1e:16:82 brd ff:ff:ff:ff:ff:ff</div><div class="line">    inet 192.168.1.1/24 scope global br-guest</div><div class="line">       valid_lft forever preferred_lft forever</div><div class="line">    inet6 fe80::9048:7bff:febc:7ab4/64 scope link </div><div class="line">       valid_lft forever preferred_lft forever</div><div class="line">33: veth173b178@if32: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master br-guest state UP </div><div class="line">    link/ether 36:eb:f8:1e:16:82 brd ff:ff:ff:ff:ff:ff link-netnsid 0</div><div class="line">    inet6 fe80::34eb:f8ff:fe1e:1682/64 scope link </div><div class="line">       valid_lft forever preferred_lft forever</div></pre></td></tr></table></figure>
+<p>查看系统路由情况 <code>route</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</div><div class="line">default         localhost       0.0.0.0         UG    100    0        0 ens160</div><div class="line">10.215.136.0    0.0.0.0         255.255.254.0   U     100    0        0 ens160</div><div class="line">192.168.1.0     0.0.0.0         255.255.255.0   U     0      0        0 br-guest</div><div class="line">192.168.122.0   0.0.0.0         255.255.255.0   U     0      0        0 virbr0</div></pre></td></tr></table></figure>
+<h2 id="自定义网桥"><a href="#自定义网桥" class="headerlink" title="自定义网桥"></a>自定义网桥</h2><p>如果默认的网络地址与宿主网络有冲突，例如宿主的内网地址也是172.17.0.0网段，为了避免路由冲突，就需要手动设置网络桥接。<br><code>docker network ls</code> 命令可以看到docker内置的三种network 默认下使用bridge.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">NETWORK ID          NAME                DRIVER              SCOPE</div><div class="line">72d22cad7fc5        bridge              bridge              local</div><div class="line">cc516d0d2760        host                host                local</div><div class="line">13f4ac8ecbf7        none                null                local</div></pre></td></tr></table></figure>
+<p><code>docker network inspect bridge</code> 命令可以审查每个网络的使用情况</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line">[</div><div class="line">    &#123;</div><div class="line">        &quot;Name&quot;: &quot;bridge&quot;,</div><div class="line">        &quot;Id&quot;: &quot;72d22cad7fc536005536cecfcccdbe37cd04a918de2a9f94a10625d99dfd02ba&quot;,</div><div class="line">        &quot;Created&quot;: &quot;2017-09-20T18:04:05.999309984+08:00&quot;,</div><div class="line">        &quot;Scope&quot;: &quot;local&quot;,</div><div class="line">        &quot;Driver&quot;: &quot;bridge&quot;,</div><div class="line">        &quot;EnableIPv6&quot;: false,</div><div class="line">        &quot;IPAM&quot;: &#123;</div><div class="line">            &quot;Driver&quot;: &quot;default&quot;,</div><div class="line">            &quot;Options&quot;: null,</div><div class="line">            &quot;Config&quot;: [</div><div class="line">                &#123;</div><div class="line">                    &quot;Subnet&quot;: &quot;192.168.1.0/24&quot;,</div><div class="line">                    &quot;Gateway&quot;: &quot;192.168.1.1&quot;</div><div class="line">                &#125;</div><div class="line">            ]</div><div class="line">        &#125;,</div><div class="line">        &quot;Internal&quot;: false,</div><div class="line">        &quot;Attachable&quot;: false,</div><div class="line">        &quot;Ingress&quot;: false,</div><div class="line">        &quot;ConfigFrom&quot;: &#123;</div><div class="line">            &quot;Network&quot;: &quot;&quot;</div><div class="line">        &#125;,</div><div class="line">        &quot;ConfigOnly&quot;: false,</div><div class="line">        &quot;Containers&quot;: &#123;</div><div class="line">            &quot;692820549d464879576132739a99261cc2a1e71057e29d1c73a1fa7b1073a76e&quot;: &#123;</div><div class="line">                &quot;Name&quot;: &quot;gitlab_web_1&quot;,</div><div class="line">                &quot;EndpointID&quot;: &quot;1309570071aa438e533e3353a19945b7f8ce94a99d49d0346dfc70223035e294&quot;,</div><div class="line">                &quot;MacAddress&quot;: &quot;02:42:c0:a8:01:02&quot;,</div><div class="line">                &quot;IPv4Address&quot;: &quot;192.168.1.2/24&quot;,</div><div class="line">                &quot;IPv6Address&quot;: &quot;&quot;</div><div class="line">            &#125;</div><div class="line">        &#125;,</div><div class="line">        &quot;Options&quot;: &#123;</div><div class="line">            &quot;com.docker.network.bridge.default_bridge&quot;: &quot;true&quot;,</div><div class="line">            &quot;com.docker.network.bridge.enable_icc&quot;: &quot;true&quot;,</div><div class="line">            &quot;com.docker.network.bridge.enable_ip_masquerade&quot;: &quot;true&quot;,</div><div class="line">            &quot;com.docker.network.bridge.host_binding_ipv4&quot;: &quot;0.0.0.0&quot;,</div><div class="line">            &quot;com.docker.network.bridge.name&quot;: &quot;br-guest&quot;,</div><div class="line">            &quot;com.docker.network.driver.mtu&quot;: &quot;1500&quot;</div><div class="line">        &#125;,</div><div class="line">        &quot;Labels&quot;: &#123;&#125;</div><div class="line">    &#125;</div><div class="line">]</div></pre></td></tr></table></figure>
+<p>停止docker容器</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">systemctl stop docker</div></pre></td></tr></table></figure>
+<p>停止docker默认网桥并删除</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">brctl show</div><div class="line">sudo ip link set dev docker0 down</div><div class="line">sudo brctl delbr docker0</div></pre></td></tr></table></figure>
+<p>自定义网桥分配IP</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">sudo brctl addbr bridge0</div><div class="line">sudo ip addr add 192.168.1.1/24 dev bridge0</div><div class="line">sudo ip link set dev bridge0 up</div></pre></td></tr></table></figure>
+<p>查看是否配置成功</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ip addr show bridge0</div></pre></td></tr></table></figure>
+<p>修改docker服务文件，默认桥接到创建的网桥上</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">vi /etc/systemd/system/docker.service</div><div class="line"># 在ExecStart后添加-b参数</div><div class="line">ExecStart=/usr/bin/dockerd -b=br-guest</div></pre></td></tr></table></figure>
+<p>重启docker服务</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">systemctl restart docker</div></pre></td></tr></table></figure>
+<p>docker服务启动后，可以通过 <code>docker network inspect</code> 检查容器是否采用了新配置的网桥</p>
+<h2 id="路由配置"><a href="#路由配置" class="headerlink" title="路由配置"></a>路由配置</h2><p>如果网桥配置后路由仍无法访问，需要手动添加路由。将内网访问全部通过宿主网络连接。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo route add -net 172.17.0.0 netmask 255.255.224.0 gw 10.215.136.2  dev ens160</div></pre></td></tr></table></figure>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="http://blog.csdn.net/linlinv3/article/details/50373511" target="_blank" rel="external">docker网络配置</a></p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/categories/docker/">docker</a>
+</div>
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/docker/">docker</a><a href="/tags/gitlab/">gitlab</a>
+  </div>
+
+</div>
+
+
+<div class="article-share" id="share">
+
+<div class="share-jiathis">
+  
+<div class="jiathis_style_24x24">
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_googleplus"></a>
+	<a class="jiathis_button_douban"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+    var jiathis_config={
+    data_track_clickback:true,
+    sm:"copy,renren,cqq",
+    pic:"",
+    summary:"",
+     ralateuid:{"tsina":"1319243713"},hideMore:false}
+    
+  </script> 
+<script type="text/javascript" src="//v3.jiathis.com/code/jia.js?uid=
+1410396293460809" charset="utf-8"></script>      
+
+ </div>
+
+</div>
+</footer>   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2014/11/26/gitlab ssh问题排查/" title="docker安装gitlab">
+  <strong>上一篇：</strong><br/>
+  <span>
+  docker安装gitlab</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2014/11/26/post error/"  title="目录重复问题">
+ <strong>下一篇：</strong><br/> 
+ <span>目录重复问题
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+<section id="comments" class="comment">
+	<div class="ds-thread"></div>
+</section>
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#docker网络配置"><span class="toc-number">1.</span> <span class="toc-text">docker网络配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#自定义网桥"><span class="toc-number">1.1.</span> <span class="toc-text">自定义网桥</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#路由配置"><span class="toc-number">1.2.</span> <span class="toc-text">路由配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考链接"><span class="toc-number">1.3.</span> <span class="toc-text">参考链接</span></a></li></ol></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+<div class="categorieslist">
+	<p class="asidetitle">分类</p>
+		<ul>
+		
+			<li><a href="/categories/docker/" title="docker">docker<sup>3</sup></a></li>
+		
+			<li><a href="/categories/docker/gitlab/" title="gitlab">gitlab<sup>2</sup></a></li>
+		
+			<li><a href="/categories/hexo/" title="hexo">hexo<sup>1</sup></a></li>
+		
+		</ul>
+</div>
+
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			<li><a href="/tags/docker/" title="docker">docker<sup>3</sup></a></li>
+		
+			<li><a href="/tags/gitlab/" title="gitlab">gitlab<sup>3</sup></a></li>
+		
+			<li><a href="/tags/python/" title="python">python<sup>2</sup></a></li>
+		
+			<li><a href="/tags/ssh/" title="ssh">ssh<sup>1</sup></a></li>
+		
+			<li><a href="/tags/hexo/" title="hexo">hexo<sup>1</sup></a></li>
+		
+			<li><a href="/tags/svn/" title="svn">svn<sup>1</sup></a></li>
+		
+			<li><a href="/tags/git/" title="git">git<sup>1</sup></a></li>
+		
+		</ul>
+</div>
+
+
+  <div class="linkslist">
+  <p class="asidetitle">友情链接</p>
+    <ul>
+        
+          <li>
+            <a href="http://wuchong.me" target="_blank" title="Jark&#39;s Blog">Jark&#39;s Blog</a>
+          </li>
+        
+          <li>
+            <a href="http://hexo.io" target="_blank" title="Hexo">Hexo</a>
+          </li>
+        
+          <li>
+            <a href="http://www.cnblogs.com" target="_blank" title="cnblogs">cnblogs</a>
+          </li>
+        
+          <li>
+            <a href="https://github.com" target="_blank" title="github">github</a>
+          </li>
+        
+    </ul>
+</div>
+
+  <div class="rsspart">
+	<a href="/atom.xml" target="_blank" title="rss">RSS 订阅</a>
+</div>
+
+  <div class="weiboshow">
+  <p class="asidetitle">新浪微博</p>
+    <iframe width="100%" height="519" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=519&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=0&isFans=0&uid=1319243713&verifier=6aac0f18&dpc=1"></iframe>
+</div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,welcome to my blog, I&#39;m sky. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/1319243713" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/aeesky" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	</div>
+		<p class="copyright">Powered by <a href="http://zespia.tw/hexo/" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Pacman">Jacman</a> © 2017 
+		
+		<a href="http://aeesky.github.io/about" target="_blank" title="Skyline">Skyline</a>
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else
+    {
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      h  = $('article h2')
+      ah = $('article h2'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  if(ah.length==0){
+    t.css('display','none');
+  }else{
+    c.click(function(){
+      ta.css('display', 'block').addClass('fadeIn');
+    });
+    o.click(function(){
+      ta.css('display', 'none');
+    });
+    $(window).scroll(function(){
+      ta.css("top",Math.max(140,320-$(this).scrollTop()));
+    });
+  };
+});
+</script>
+
+
+
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"aeesky"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+
+<!-- MathJax End -->
+
+  </body>
+</html>
